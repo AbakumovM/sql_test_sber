@@ -38,7 +38,19 @@ WHERE c.d_id NOT IN (SELECT d_id
 					 GROUP BY d_id
  					 HAVING COUNT(*) > 0);
 
+-- второй вариант:
 
+SELECT 
+    u.name, 
+    c.d_number 
+FROM 
+    users u 
+    JOIN contracts c ON u.client_id = c.client_id 
+WHERE EXISTS (
+    SELECT 1 
+    FROM operations o 
+    WHERE o.d_id = c.d_id
+);
  					
 -- Задание 2
 
