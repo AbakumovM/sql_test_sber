@@ -9,7 +9,26 @@ SELECT
 FROM users u 
 	JOIN contracts c ON u.client_id = c.client_id 
 	JOIN operations o ON c.d_id = o.d_id;
-	
+
+
+CREATE OR REPLACE FUNCTION get_user_operations()
+RETURNS TABLE(name varchar, d_number varchar, dt text, summa NUMERIC)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        u.name, 
+        c.d_number,
+        to_char(o.dt, 'dd.mm.yyyy') as dt, 
+        o.summa
+    FROM users u 
+    JOIN contracts c ON u.client_id = c.client_id 
+    JOIN operations o ON c.d_id = o.d_id;
+END;
+$$;
+
+select * from get_user_operations();
 
 
 -- Б. Вывести клиентов с максимальной датой сделки (Если с такой датой клиентов несколько, вывести всех):
@@ -46,7 +65,7 @@ SELECT
 FROM 
     users u 
     JOIN contracts c ON u.client_id = c.client_id 
-WHERE EXISTS (
+WHERE  NOT EXISTS (
     SELECT 1 
     FROM operations o 
     WHERE o.d_id = c.d_id
@@ -227,6 +246,24 @@ SELECT
 FROM t_currency
 WHERE code = 'USD' AND date_c = '2024-06-26';
 
+-- через функцию
+
+CREATE OR REPLACE function get_currency_value (code_v TEXT, date_v DATE)
+RETURNS TABLE(code TEXT, date_c DATE, value numeric) as $$
+begin
+	RETURN QUERY
+	SELECT
+		code,
+		date_c,
+		value 
+	FROM t_currency
+	WHERE code = code_v AND date_c = date_v;
+end;
+$$ 
+LANGUAGE plpgsql;
+
+SELECT * FROM get_currency_value('USD', '2024-07-03');
+
 
 
 -- Задание 4. Даны две таблицы, 
@@ -247,11 +284,11 @@ SELECT * FROM table1 UNION SELECT * FROM table2;
 
 -- 1. отобразить количество занятий, на которые ходит более 5 студентов
 
-SELECT COUNT(count) AS count_lesson 
-FROM (SELECT COUNT(student_id) AS count
-FROM student_lesson 
-GROUP BY lesson_id
-HAVING COUNT(student_id) > 5) AS t;
+SELECT COUNT(*) AS count_lesson 
+FROM (SELECT lesson_id 
+	  FROM student_lesson 
+	  GROUP BY lesson_id
+ 	  HAVING COUNT(student_id) > 5) AS t;
 
 -- 2. отобразить все занятий, на которые записан определенный студент
 
@@ -272,5 +309,4 @@ SELECT
     MAX(CASE WHEN value_date = '2013-05-01' THEN value END) AS TO_MAY
 FROM table3;
 
-select * from podr;
 
